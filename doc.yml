@@ -1,0 +1,46 @@
+services:
+  db:
+    image: 'postgres:16-alpine'
+    container_name: tasty-db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DATABASE}
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DATABASE}", "-U", "${POSTGRES_USERNAME}"]
+      start_period: 5s
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    logging:
+      driver: none
+  backend:
+    build: ../back-end/.
+    container_name: tasty-backend
+    environment:
+      SPRING_APPLICATION_JSON:
+        '{
+         "spring.jpa.properties.hibernate.dialect":"org.hibernate.dialect.PostgreSQLDialect",
+         "spring.jpa.hibernate.ddl-auto ":" update",
+         "spring.jpa.hibernate.show-sql":"true",
+         "spring.datasource.url":"jdbc:postgresql://db:5432/${POSTGRES_DATABASE}",
+         "spring.datasource.username":"${POSTGRES_USERNAME}",
+         "spring.datasource.password":"${POSTGRES_PASSWORD}",
+         "spring.jpa.hibernate.naming.physical-strategy":"org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl",
+         "spring.jpa.hibernate.naming.implicit-strategy":"org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl",
+         "spring.main.allow-bean-definition-overriding":"true",
+         "springdoc.swagger-ui.path":"/swagger.html",
+         "springdoc.enable-native-support":"true",
+         "tastyAPi.Key":"${TASTY_KEY}"
+        }'
+    ports:
+      - 8080:8080
+  frontend:
+    build: ../front-end/front-end
+    container_name: tasty-frontend
+    ports:
+      - 80:80
