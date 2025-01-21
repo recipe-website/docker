@@ -39,6 +39,9 @@ services:
         }'
     ports:
       - 8080:8080
+    depends_on:
+        db:
+            condition: service_healthy
   frontend:
     build: ../front-end/front-end
     container_name: tasty-frontend
